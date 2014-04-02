@@ -1,0 +1,31 @@
+<html>
+    <head>
+        <link rel="stylesheet" href="//netdna.bootstrapcdn.com/bootstrap/3.1.1/css/bootstrap.min.css">
+    </head>
+    <body>
+        <div class="row">
+            <div class="col-sm-6 col-sm-offset-3">
+                <h2>Link Shortener</h2>
+                {% if link.clicks == 0 %}
+                <div class="alert alert-success">
+                    <strong>Success!</strong> You have generated a short link.
+                </div>
+                {% endif %}
+                <h3>Details</h3>
+                <dl>
+                    <dt>Short URL</dt>
+                    <dd>{{ link.id }}</dd>
+
+                    <dt>Redirects to</dt>
+                    <dd>{{ link.url }}</dd>
+
+                    <dt>Created at</dt>
+                    <dd>{{ link.created_at }}</dd>
+
+                    <dt>Clicks</dt>
+                    <dd>{{ link.clicks }}</dd>
+                </dl>
+            </div>
+        </div>
+    </body>
+</html>
