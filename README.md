@@ -24,6 +24,7 @@ $ python linkshortener.py
 
 ### TODO
 * Compress link.id using the url_safe tuple for shorter URLs
+* Only allow shortening URL to links that return HTTP status code 200 (OK)
 * Store clicks in separate table with more information (timestamp, ip, browser)
 * Show clicks in realtime in /shortened/id
 * Cache popular links with Redis
