@@ -31,6 +31,29 @@ app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://mark@localhost/linkshorten
 db = SQLAlchemy(app)
 
 url_safe = ('2', 'f', 'D', '4', 'I', 'o', 'a', 'X', 'p', 'g', 'e', '9', 'i', '0', 'x', 'O', 'H', 'W', 's', 'h', 'Q', 'r', 'k', 'y', 'Z', 'c', '6', 'b', 'Y', 'S', 'J', 'M', 'E', 'G', 'l', '-', 'T', 'B', 'V', 'F', 'K', 'v', 'n', 'A', '_', 'U', 't', 'j', 'w', '1', 'd', 'N', 'm', 'u', 'C', 'R', '3', 'L', 'q', '8', 'z', 'P', '5', '7')
+decode_array = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 35, -1, -1, 13, 49, 0, 56, 3, 62, 26, 63, 59, 11, -1, -1, -1, -1, -1, -1, -1, 43, 37, 54, 2, 32, 39, 33, 16, 4, 30, 40, 57, 31, 51, 15, 61, 20, 55, 29, 36, 45, 38, 17, 7, 28, 24, -1, -1, -1, -1, 44, -1, 6, 27, 25, 50, 10, 1, 9, 19, 12, 47, 22, 34, 52, 42, 5, 8, 58, 21, 18, 46, 53, 41, 48, 14, 23, 60]
+
+def encode_int(i):
+    if i == 0:
+        return ''
+
+    return encode_int(i >> 6) + url_safe[i & 63]
+
+def decode_int(v):
+    res = 0
+    mult = 1
+    for c in reversed(v):
+        idx = ord(c)
+        if idx >= len(decode_array):
+            return 0
+
+        val = decode_array[idx]
+        if val == -1:
+            return 0
+
+        res += val * mult
+        mult <<= 6
+    return res
 
 class Link(db.Model):
     id = db.Column(db.Integer, primary_key=True)
@@ -58,27 +81,32 @@ def shorten():
     link = Link(request.form['url'], request.remote_addr)
     db.session.add(link)
     db.session.commit()
-    return redirect(url_for('shortened', link_id=link.id))
+    return redirect(url_for('shortened', link_id=encode_int(link.id)+link.random))
 
-@app.route('/shortened/<int:link_id>')
+@app.route('/shortened/<string:link_id>')
 def shortened(link_id):
-    link = Link.query.filter_by(id=link_id).first()
-    if link is None:
-        return render_template('index.html', error='There is no shortened link with that id.')
+    if len(link_id) < 5:
+        abort(404)
 
-    if ipaddress.ip_address(request.remote_addr) not in ipaddress.ip_network(link.creator_ip):
+    id = decode_int(link_id[:-4])
+    if id == 0:
+        abort(404)
+
+    link = Link.query.filter_by(id=id).first()
+    if link is None or link.random != link_id[-4:]:
+        return render_template('index.html', error='There is no shortened link with that id.')
+    elif ipaddress.ip_address(request.remote_addr) not in ipaddress.ip_network(link.creator_ip):
         return render_template('index.html', error='That shortened link was not generated from your network.')
 
-    return render_template('shortened.html', base_url=request.host_url, link=link)
+    return render_template('shortened.html', base_url=request.host_url, encoded_id=encode_int(link.id), link=link)
 
 @app.route("/<string:link_id>")
 def visit_short_link(link_id):
     if len(link_id) < 5:
         abort(404)
 
-    try:
-        id = int(link_id[:-4])
-    except ValueError:
+    id = decode_int(link_id[:-4])
+    if id == 0:
         abort(404)
 
     link = Link.query.filter_by(id=id).first()
