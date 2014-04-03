@@ -4,12 +4,14 @@ pylinkshortener
 Link shortener written in Python using Flask, PostgreSQL and SQLAlchemy
 
 ### Setup
-#### Install the required modules:
+#### Installation
+Installing the required modules:
 ```bash
 $ pip install -r requirements.txt
 ```
 
-#### Configure SQLALCHEMY_DATABASE_URI in linkshortener.py and then run this in the Python interpreter to setup the database:
+#### Configuration
+Configure SQLALCHEMY_DATABASE_URI in linkshortener.py and then run this in the Python interpreter to setup the database tables:
 ```py
 from linkshortener import db
 db.create_all()
