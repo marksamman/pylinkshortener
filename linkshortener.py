@@ -44,7 +44,7 @@ class Link(db.Model):
         self.url = url
         self.created = datetime.utcnow()
         self.creator_ip = creator_ip
-        self.random = ''.join(url_safe[random.randint(0, len(url_safe)-1)] for _ in range(4))
+        self.random = ''.join(random.choice(url_safe) for _ in range(4))
 
     def __repr__(self):
         return '<Link %r>' % self.url
