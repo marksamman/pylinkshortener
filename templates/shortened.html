@@ -19,8 +19,8 @@
                     <dt>Redirects to</dt>
                     <dd>{{ link.url }}</dd>
 
-                    <dt>Created at</dt>
-                    <dd>{{ link.created_at }}</dd>
+                    <dt>Created</dt>
+                    <dd>{{ link.created.strftime("%c") }} UTC</dd>
 
                     <dt>Clicks</dt>
                     <dd>{{ link.clicks }}</dd>
