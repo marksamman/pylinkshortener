@@ -65,7 +65,7 @@ def shortened(link_id):
     if ipaddress.ip_address(request.remote_addr) not in ipaddress.ip_network(link.creator_ip):
         return render_template('index.html', error='That shortened link was not generated from your network.')
 
-    return render_template('shortened.html', link=link)
+    return render_template('shortened.html', base_url=request.host_url, link=link)
 
 @app.route("/<int:link_id>")
 def visit_short_link(link_id):
@@ -78,4 +78,4 @@ def visit_short_link(link_id):
     return redirect(link.url)
 
 if __name__ == "__main__":
-    app.run()
+    app.run(debug=True)
