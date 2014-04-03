@@ -20,7 +20,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import ipaddress
+import ipaddress, random
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for
 from flask.ext.sqlalchemy import SQLAlchemy
@@ -30,17 +30,21 @@ app = Flask(__name__)
 app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://mark@localhost/linkshortener'
 db = SQLAlchemy(app)
 
+url_safe = ('2', 'f', 'D', '4', 'I', 'o', 'a', 'X', 'p', 'g', 'e', '9', 'i', '0', 'x', 'O', 'H', 'W', 's', 'h', 'Q', 'r', 'k', 'y', 'Z', 'c', '6', 'b', 'Y', 'S', 'J', 'M', 'E', 'G', 'l', '-', 'T', 'B', 'V', 'F', 'K', 'v', 'n', 'A', '_', 'U', 't', 'j', 'w', '1', 'd', 'N', 'm', 'u', 'C', 'R', '3', 'L', 'q', '8', 'z', 'P', '5', '7')
+
 class Link(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     url = db.Column(db.VARCHAR)
     creator_ip = db.Column(CIDR)
     created = db.Column(db.DateTime)
     clicks = db.Column(db.Integer, default=0)
+    random = db.Column(db.String(4))
 
     def __init__(self, url, creator_ip):
         self.url = url
         self.created = datetime.utcnow()
         self.creator_ip = creator_ip
+        self.random = ''.join(url_safe[random.randint(0, len(url_safe)-1)] for _ in range(4))
 
     def __repr__(self):
         return '<Link %r>' % self.url
@@ -67,11 +71,15 @@ def shortened(link_id):
 
     return render_template('shortened.html', base_url=request.host_url, link=link)
 
-@app.route("/<int:link_id>")
+@app.route("/<string:link_id>")
 def visit_short_link(link_id):
-    link = Link.query.filter_by(id=link_id).first()
+    id = int(link_id[:-4])
+    link = Link.query.filter_by(id=id).first()
     if link is None:
-        return render_template('index.html', error='There is no shortened link with that id.')
+        return render_template('index.html', error='There is no shortened link with that URL.')
+
+    if link.random != link_id[-4:]:
+        return render_template('index.html', error='There is no shortened link with that URL.')
 
     link.clicks += 1
     db.session.commit()
