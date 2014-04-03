@@ -22,7 +22,7 @@
 
 import ipaddress, random
 from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, abort
 from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import CIDR
 
@@ -73,12 +73,16 @@ def shortened(link_id):
 
 @app.route("/<string:link_id>")
 def visit_short_link(link_id):
-    id = int(link_id[:-4])
-    link = Link.query.filter_by(id=id).first()
-    if link is None:
-        return render_template('index.html', error='There is no shortened link with that URL.')
+    if len(link_id) < 5:
+        abort(404)
 
-    if link.random != link_id[-4:]:
+    try:
+        id = int(link_id[:-4])
+    except ValueError:
+        abort(404)
+
+    link = Link.query.filter_by(id=id).first()
+    if link is None or link.random != link_id[-4:]:
         return render_template('index.html', error='There is no shortened link with that URL.')
 
     link.clicks += 1
