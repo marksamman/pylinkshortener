@@ -55,12 +55,29 @@ def decode_int(v):
         mult <<= 6
     return res
 
+class Click(db.Model):
+    id = db.Column(db.Integer, primary_key=True)
+    inserted = db.Column(db.DateTime)
+    ip = db.Column(CIDR)
+    user_agent = db.Column(db.VARCHAR)
+
+    link_id = db.Column(db.Integer, db.ForeignKey('link.id'))
+    link = db.relationship('Link', backref=db.backref('clicks', lazy='dynamic'))
+
+    def __init__(self, ip, user_agent, link):
+        self.inserted = datetime.utcnow()
+        self.ip = ip
+        self.user_agent = user_agent
+        self.link = link
+
+    def __repr__(self):
+        return '<Click %r>' % self.inserted
+
 class Link(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     url = db.Column(db.VARCHAR)
     creator_ip = db.Column(CIDR)
     created = db.Column(db.DateTime)
-    clicks = db.Column(db.Integer, default=0)
     random = db.Column(db.String(2))
 
     def __init__(self, url, creator_ip):
@@ -113,7 +130,7 @@ def visit_short_link(link_id):
     if link is None or link.random != link_id[-2:]:
         return render_template('index.html', error='There is no shortened link with that URL.')
 
-    link.clicks += 1
+    db.session.add(Click(request.remote_addr, request.headers.get('User-Agent'), link))
     db.session.commit()
     return redirect(link.url)
 
