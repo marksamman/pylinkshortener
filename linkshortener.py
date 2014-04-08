@@ -61,13 +61,13 @@ class Link(db.Model):
     creator_ip = db.Column(CIDR)
     created = db.Column(db.DateTime)
     clicks = db.Column(db.Integer, default=0)
-    random = db.Column(db.String(4))
+    random = db.Column(db.String(2))
 
     def __init__(self, url, creator_ip):
         self.url = url
         self.created = datetime.utcnow()
         self.creator_ip = creator_ip
-        self.random = ''.join(random.choice(url_safe) for _ in range(4))
+        self.random = ''.join(random.choice(url_safe) for _ in range(2))
 
     def __repr__(self):
         return '<Link %r>' % self.url
@@ -85,15 +85,15 @@ def shorten():
 
 @app.route('/shortened/<string:link_id>')
 def shortened(link_id):
-    if len(link_id) < 5:
+    if len(link_id) < 3:
         abort(404)
 
-    id = decode_int(link_id[:-4])
+    id = decode_int(link_id[:-2])
     if id == 0:
         abort(404)
 
     link = Link.query.filter_by(id=id).first()
-    if link is None or link.random != link_id[-4:]:
+    if link is None or link.random != link_id[-2:]:
         return render_template('index.html', error='There is no shortened link with that id.')
     elif ipaddress.ip_address(request.remote_addr) not in ipaddress.ip_network(link.creator_ip):
         return render_template('index.html', error='That shortened link was not generated from your network.')
@@ -102,15 +102,15 @@ def shortened(link_id):
 
 @app.route("/<string:link_id>")
 def visit_short_link(link_id):
-    if len(link_id) < 5:
+    if len(link_id) < 3:
         abort(404)
 
-    id = decode_int(link_id[:-4])
+    id = decode_int(link_id[:-2])
     if id == 0:
         abort(404)
 
     link = Link.query.filter_by(id=id).first()
-    if link is None or link.random != link_id[-4:]:
+    if link is None or link.random != link_id[-2:]:
         return render_template('index.html', error='There is no shortened link with that URL.')
 
     link.clicks += 1
