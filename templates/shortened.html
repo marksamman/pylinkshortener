@@ -4,7 +4,7 @@
     </head>
     <body>
         <div class="row">
-            <div class="col-sm-6 col-sm-offset-3">
+            <div class="col-xs-10 col-xs-offset-1">
                 <h2>Link Shortener</h2>
                 {% if link.clicks == 0 %}
                 <div class="alert alert-success">
@@ -12,19 +12,25 @@
                 </div>
                 {% endif %}
                 <h3>Details</h3>
-                <dl>
-                    <dt>Short URL</dt>
-                    <dd>{{ base_url }}{{ encoded_id }}{{ link.random }}</dd>
-
-                    <dt>Redirects to</dt>
-                    <dd>{{ link.url }}</dd>
-
-                    <dt>Created</dt>
-                    <dd>{{ link.created.strftime("%c") }} UTC</dd>
-
-                    <dt>Clicks</dt>
-                    <dd>{{ link.clicks.count() }}</dd>
-                </dl>
+                <div class="row">
+                    <div class="col-xs-4"><strong>Short URL:</strong><br>{{ base_url }}{{ encoded_id }}{{ link.random }}</div>
+                    <div class="col-xs-4"><strong>Redirects to:</strong><br>{{ link.url }}</div>
+                    <div class="col-xs-4"><strong>Created:</strong><br>{{ link.created.strftime("%c") }} UTC</div>
+                </div>
+                <h3>Clicks</h3>
+                <table class="table table-striped table-condensed">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>User agent</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for click in link.clicks %}
+                        <tr><td>{{ click.inserted.strftime("%c") }} UTC</td><td>{{ click.user_agent }}</td></tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
     </body>
