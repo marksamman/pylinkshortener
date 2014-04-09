@@ -20,7 +20,7 @@
 
 import ipaddress
 from flask import Flask, render_template, request, redirect, url_for, abort
-from app.constants import decode_array, url_safe
+from app.util import encode_int, decode_int
 from flask.ext.sqlalchemy import SQLAlchemy
 
 app = Flask(__name__)
@@ -28,28 +28,6 @@ app.config.from_object('config')
 db = SQLAlchemy(app)
 
 from app.models import Link, Click
-
-def encode_int(i):
-	if i == 0:
-		return ''
-
-	return encode_int(i >> 6) + url_safe[i & 63]
-
-def decode_int(v):
-	res = 0
-	mult = 1
-	for c in reversed(v):
-		idx = ord(c)
-		if idx >= len(decode_array):
-			return 0
-
-		val = decode_array[idx]
-		if val == -1:
-			return 0
-
-		res += val * mult
-		mult <<= 6
-	return res
 
 @app.route("/")
 def index():
