@@ -20,9 +20,11 @@
 
 import random
 from datetime import datetime
-from app import db
+from flask.ext.sqlalchemy import SQLAlchemy
 from sqlalchemy.dialects.postgresql import CIDR
 from app.constants import url_safe
+
+db = SQLAlchemy()
 
 class Link(db.Model):
     id = db.Column(db.Integer, primary_key=True)

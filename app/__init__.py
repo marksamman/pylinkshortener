@@ -21,13 +21,11 @@
 import ipaddress
 from flask import Flask, render_template, request, redirect, url_for, abort
 from app.util import encode_int, decode_int
-from flask.ext.sqlalchemy import SQLAlchemy
+from app.models import db, Link, Click
 
 app = Flask(__name__)
 app.config.from_object('config')
-db = SQLAlchemy(app)
-
-from app.models import Link, Click
+db.init_app(app)
 
 @app.route("/")
 def index():
