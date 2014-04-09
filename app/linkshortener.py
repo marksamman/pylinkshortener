@@ -1,5 +1,3 @@
-#!/usr/bin/env python3
-#
 # Copyright (c) 2014 Mark Samman <https://github.com/marksamman/pylinkshortener>
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
@@ -20,18 +18,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import ipaddress, random
-from datetime import datetime
-from flask import Flask, render_template, request, redirect, url_for, abort
-from flask.ext.sqlalchemy import SQLAlchemy
-from sqlalchemy.dialects.postgresql import CIDR
+import ipaddress
+from flask import Blueprint, render_template, request, redirect, url_for, abort
+from app import app, db
+from app.constants import decode_array, url_safe
+from app.models import Link, Click, url_safe
 
-app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'postgresql://mark@localhost/linkshortener'
-db = SQLAlchemy(app)
-
-url_safe = ('2', 'f', 'D', '4', 'I', 'o', 'a', 'X', 'p', 'g', 'e', '9', 'i', '0', 'x', 'O', 'H', 'W', 's', 'h', 'Q', 'r', 'k', 'y', 'Z', 'c', '6', 'b', 'Y', 'S', 'J', 'M', 'E', 'G', 'l', '-', 'T', 'B', 'V', 'F', 'K', 'v', 'n', 'A', '_', 'U', 't', 'j', 'w', '1', 'd', 'N', 'm', 'u', 'C', 'R', '3', 'L', 'q', '8', 'z', 'P', '5', '7')
-decode_array = [-1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, -1, 35, -1, -1, 13, 49, 0, 56, 3, 62, 26, 63, 59, 11, -1, -1, -1, -1, -1, -1, -1, 43, 37, 54, 2, 32, 39, 33, 16, 4, 30, 40, 57, 31, 51, 15, 61, 20, 55, 29, 36, 45, 38, 17, 7, 28, 24, -1, -1, -1, -1, 44, -1, 6, 27, 25, 50, 10, 1, 9, 19, 12, 47, 22, 34, 52, 42, 5, 8, 58, 21, 18, 46, 53, 41, 48, 14, 23, 60]
+linkshortener = Blueprint('linkshortener', __name__, template_folder='templates')
 
 def encode_int(i):
     if i == 0:
@@ -55,52 +48,18 @@ def decode_int(v):
         mult <<= 6
     return res
 
-class Click(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    inserted = db.Column(db.DateTime)
-    ip = db.Column(CIDR)
-    user_agent = db.Column(db.VARCHAR)
-
-    link_id = db.Column(db.Integer, db.ForeignKey('link.id'))
-    link = db.relationship('Link', backref=db.backref('clicks', lazy='dynamic'))
-
-    def __init__(self, ip, user_agent, link):
-        self.inserted = datetime.utcnow()
-        self.ip = ip
-        self.user_agent = user_agent
-        self.link = link
-
-    def __repr__(self):
-        return '<Click %r>' % self.inserted
-
-class Link(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    url = db.Column(db.VARCHAR)
-    creator_ip = db.Column(CIDR)
-    created = db.Column(db.DateTime)
-    random = db.Column(db.String(2))
-
-    def __init__(self, url, creator_ip):
-        self.url = url
-        self.created = datetime.utcnow()
-        self.creator_ip = creator_ip
-        self.random = ''.join(random.choice(url_safe) for _ in range(2))
-
-    def __repr__(self):
-        return '<Link %r>' % self.url
-
-@app.route("/")
+@linkshortener.route("/")
 def index():
     return render_template('index.html')
 
-@app.route("/shorten", methods=['POST'])
+@linkshortener.route("/shorten", methods=['POST'])
 def shorten():
     link = Link(request.form['url'], request.remote_addr)
     db.session.add(link)
     db.session.commit()
-    return redirect(url_for('shortened', link_id=encode_int(link.id)+link.random))
+    return redirect(url_for('linkshortener.shortened', link_id=encode_int(link.id)+link.random))
 
-@app.route('/shortened/<string:link_id>')
+@linkshortener.route('/shortened/<string:link_id>')
 def shortened(link_id):
     if len(link_id) < 3:
         abort(404)
@@ -117,7 +76,7 @@ def shortened(link_id):
 
     return render_template('shortened.html', base_url=request.host_url, encoded_id=encode_int(link.id), link=link)
 
-@app.route("/<string:link_id>")
+@linkshortener.route("/<string:link_id>")
 def visit_short_link(link_id):
     if len(link_id) < 3:
         abort(404)
@@ -133,6 +92,3 @@ def visit_short_link(link_id):
     db.session.add(Click(request.remote_addr, request.headers.get('User-Agent'), link))
     db.session.commit()
     return redirect(link.url)
-
-if __name__ == "__main__":
-    app.run(debug=True)
