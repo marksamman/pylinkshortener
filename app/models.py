@@ -49,7 +49,7 @@ class Click(db.Model):
     user_agent = db.Column(db.VARCHAR)
 
     link_id = db.Column(db.Integer, db.ForeignKey('link.id'))
-    link = db.relationship('Link', backref=db.backref('clicks', lazy='dynamic'))
+    link = db.relationship('Link', backref=db.backref('clicks', order_by=inserted.desc(), lazy='dynamic'))
 
     def __init__(self, ip, user_agent, link):
         self.inserted = datetime.utcnow()
@@ -59,3 +59,10 @@ class Click(db.Model):
 
     def __repr__(self):
         return '<Click %r>' % self.inserted
+
+class QueuedClick:
+    def __init__(self, ip, user_agent, link_id):
+        self.inserted = datetime.utcnow()
+        self.ip = ip
+        self.user_agent = user_agent
+        self.link_id = link_id

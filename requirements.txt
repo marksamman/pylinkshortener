@@ -6,3 +6,4 @@ SQLAlchemy==0.9.4
 Werkzeug==0.9.4
 itsdangerous==0.24
 psycopg2==2.5.2
+websockets==2.0

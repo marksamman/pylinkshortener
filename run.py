@@ -20,6 +20,73 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-from app import app
+import asyncio, ipaddress, json, psycopg2, queue, threading, websockets
+
+from app import app, clicksQueue
+
+clients = dict()
+
+# FIXME: use SQLAlchemy
+conn = psycopg2.connect("host='localhost' dbname='linkshortener' user='mark'")
+cursor = conn.cursor()
+
+@asyncio.coroutine
+def handleClicks():
+	while True:
+		# FIXME: should yield from queue.get with asyncio.Queue
+		# but we can't put in asyncio.Queue from Flask thread
+		try:
+			click = clicksQueue.get(False)
+		except queue.Empty:
+			yield from asyncio.sleep(0.25)
+			continue
+
+		cursor.execute("INSERT INTO click (inserted, ip, user_agent, link_id) VALUES (%s, %s, %s, %s)",
+						(click.inserted, click.ip, click.user_agent, click.link_id))
+		conn.commit()
+
+		json_data = json.dumps({
+			"inserted": click.inserted.strftime("%c"),
+			"ua": click.user_agent
+		})
+		if click.link_id in clients:
+			for client in clients[click.link_id]:
+				yield from client.send(json_data)
+
+@asyncio.coroutine
+def handleConnection(websocket, uri):
+	link_id = yield from websocket.recv()
+	try:
+		link_id = int(link_id)
+	except ValueError:
+		return
+
+	if link_id == 0:
+		return
+
+	cursor.execute("SELECT creator_ip FROM link WHERE id = %s", (link_id,))
+	res = cursor.fetchone()
+	if res is None:
+		return
+
+	remote_addr = websocket.writer.get_extra_info("peername")[0]
+	if ipaddress.ip_address(remote_addr) not in ipaddress.ip_network(res[0]):
+		return
+
+	if link_id not in clients:
+		clients[link_id] = set()
+
+	clients[link_id].add(websocket)
+	yield from websocket.recv()
+	clients[link_id].remove(websocket)
+
+def asyncioThread():
+	loop = asyncio.new_event_loop()
+	asyncio.set_event_loop(loop)
+	asyncio.Task(handleClicks())
+	asyncio.Task(websockets.serve(handleConnection, 'localhost', 5001))
+	loop.run_forever()
+
 if __name__ == "__main__":
-	app.run(debug=True)
+	threading.Thread(target=asyncioThread).start()
+	app.run()

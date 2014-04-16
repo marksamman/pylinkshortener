@@ -18,10 +18,12 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import ipaddress
+import ipaddress, queue
 from flask import Flask, render_template, request, redirect, url_for, abort
 from app.util import encode_int, decode_int
-from app.models import db, Link, Click
+from app.models import db, Link, QueuedClick
+
+clicksQueue = queue.Queue()
 
 app = Flask(__name__)
 app.config.from_object('config')
@@ -68,6 +70,5 @@ def visit_short_link(link_id):
 	if link is None or link.random != link_id[-2:]:
 		return render_template('index.html', error='There is no shortened link with that URL.')
 
-	db.session.add(Click(request.remote_addr, request.headers.get('User-Agent'), link))
-	db.session.commit()
+	clicksQueue.put_nowait(QueuedClick(request.remote_addr, request.headers.get('User-Agent'), link.id))
 	return redirect(link.url)

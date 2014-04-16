@@ -26,7 +26,7 @@
                             <th>User agent</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody id="clicks">
                         {% for click in link.clicks %}
                         <tr><td>{{ click.inserted.strftime("%c") }} UTC</td><td>{{ click.user_agent }}</td></tr>
                         {% endfor %}
@@ -34,5 +34,26 @@
                 </table>
             </div>
         </div>
+        <script>
+            function initWebSocket() {
+                clicks = document.getElementById("clicks")
+                websocket = new WebSocket("ws://localhost:5001/")
+                websocket.onopen = function(evt) {
+                    console.log("connected")
+                    websocket.send({{ link.id }})
+                }
+                websocket.onclose = function(evt) {
+                    console.log("disconnected")
+                }
+                websocket.onmessage = function(evt) {
+                    res = JSON.parse(evt.data)
+                    clicks.innerHTML = "<tr><td>" + res.inserted + " UTC</td><td>" + res.ua + "</td></tr>" + clicks.innerHTML
+                }
+                websocket.onerror = function(evt) {
+                    console.log("error: " + evt.data)
+                }
+            }
+            window.addEventListener("load", initWebSocket, false)
+        </script>
     </body>
 </html>
