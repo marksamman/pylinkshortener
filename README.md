@@ -11,10 +11,10 @@ $ pip install -r requirements.txt
 ```
 
 #### Configuration
-Configure SQLALCHEMY_DATABASE_URI in linkshortener.py and then run this in the Python interpreter to setup the database tables:
+Configure SQLALCHEMY_DATABASE_URI in config.py and then run this in the Python interpreter to setup the database tables:
 ```py
-from linkshortener import db
-db.create_all()
+from app.models import Base, engine
+Base.metadata.create_all(engine)
 ```
 
 #### Run:
