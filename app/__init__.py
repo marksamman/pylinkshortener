@@ -20,14 +20,12 @@
 
 import ipaddress, queue
 from flask import Flask, render_template, request, redirect, url_for, abort
+from app.models import Link, QueuedClick, Session
 from app.util import encode_int, decode_int
-from app.models import db, Link, QueuedClick
-
-clicksQueue = queue.Queue()
 
 app = Flask(__name__)
-app.config.from_object('config')
-db.init_app(app)
+clicksQueue = queue.Queue()
+flask_session = Session()
 
 @app.route("/")
 def index():
@@ -36,8 +34,8 @@ def index():
 @app.route("/shorten", methods=['POST'])
 def shorten():
 	link = Link(request.form['url'], request.remote_addr)
-	db.session.add(link)
-	db.session.commit()
+	flask_session.add(link)
+	flask_session.commit()
 	return redirect(url_for('shortened', link_id=encode_int(link.id)+link.random))
 
 @app.route('/shortened/<string:link_id>')
@@ -49,7 +47,7 @@ def shortened(link_id):
 	if id == 0:
 		abort(404)
 
-	link = Link.query.filter_by(id=id).first()
+	link = flask_session.query(Link).filter_by(id=id).first()
 	if link is None or link.random != link_id[-2:]:
 		return render_template('index.html', error='There is no shortened link with that id.')
 	elif ipaddress.ip_address(request.remote_addr) not in ipaddress.ip_network(link.creator_ip):
@@ -66,7 +64,7 @@ def visit_short_link(link_id):
 	if id == 0:
 		abort(404)
 
-	link = Link.query.filter_by(id=id).first()
+	link = flask_session.query(Link).filter_by(id=id).first()
 	if link is None or link.random != link_id[-2:]:
 		return render_template('index.html', error='There is no shortened link with that URL.')
 

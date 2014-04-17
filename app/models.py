@@ -20,18 +20,25 @@
 
 import random
 from datetime import datetime
-from flask.ext.sqlalchemy import SQLAlchemy
+from sqlalchemy import create_engine, Column, DateTime, ForeignKey, Integer, String, VARCHAR
 from sqlalchemy.dialects.postgresql import CIDR
+from sqlalchemy.ext.declarative import declarative_base
+from sqlalchemy.orm import backref, relationship, sessionmaker
 from app.constants import url_safe
+import config
 
-db = SQLAlchemy()
+engine = create_engine(config.SQLALCHEMY_DATABASE_URI)
+Session = sessionmaker(bind=engine)
+Base = declarative_base()
 
-class Link(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    url = db.Column(db.VARCHAR)
-    creator_ip = db.Column(CIDR)
-    created = db.Column(db.DateTime)
-    random = db.Column(db.String(2))
+class Link(Base):
+    __tablename__ = 'links'
+
+    id = Column(Integer, primary_key=True)
+    url = Column(VARCHAR)
+    creator_ip = Column(CIDR)
+    created = Column(DateTime)
+    random = Column(String(2))
 
     def __init__(self, url, creator_ip):
         self.url = url
@@ -42,14 +49,16 @@ class Link(db.Model):
     def __repr__(self):
         return '<Link %r>' % self.url
 
-class Click(db.Model):
-    id = db.Column(db.Integer, primary_key=True)
-    inserted = db.Column(db.DateTime)
-    ip = db.Column(CIDR)
-    user_agent = db.Column(db.VARCHAR)
+class Click(Base):
+    __tablename__ = 'clicks'
 
-    link_id = db.Column(db.Integer, db.ForeignKey('link.id'))
-    link = db.relationship('Link', backref=db.backref('clicks', order_by=inserted.desc(), lazy='dynamic'))
+    id = Column(Integer, primary_key=True)
+    inserted = Column(DateTime)
+    ip = Column(CIDR)
+    user_agent = Column(VARCHAR)
+
+    link_id = Column(Integer, ForeignKey('links.id'))
+    link = relationship('Link', backref=backref('clicks', order_by=inserted.desc()))
 
     def __init__(self, ip, user_agent, link):
         self.inserted = datetime.utcnow()
