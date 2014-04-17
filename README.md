@@ -1,7 +1,7 @@
 pylinkshortener
 ===============
 
-Link shortener written in Python using Flask, PostgreSQL and SQLAlchemy
+Link shortener written in Python using Flask, PostgreSQL, SQLAlchemy and WebSocket (using asyncio). pylinkshortener requires Python 3.4 or newer.
 
 ### Setup
 #### Installation
