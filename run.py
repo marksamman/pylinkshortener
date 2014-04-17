@@ -22,7 +22,7 @@
 
 import threading
 from app import app
-from websocket import websocketThread
+from app.websocket import websocketThread
 
 if __name__ == "__main__":
 	threading.Thread(target=websocketThread).start()
