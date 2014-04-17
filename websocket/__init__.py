@@ -20,7 +20,7 @@
 
 import asyncio, ipaddress, json, queue, websockets
 from app import clicksQueue
-from app.models import Session, Link, Click, QueuedClick
+from app.models import Session, Link, Click
 
 wsClients = dict()
 asyncio_session = Session()
@@ -66,9 +66,9 @@ def handleConnection(websocket, uri):
 	if link is None:
 		return
 
-	#remote_addr = websocket.writer.get_extra_info("peername")[0]
-	#if ipaddress.ip_address(remote_addr) not in ipaddress.ip_network(link.creator_ip):
-	#	return
+	remote_addr = websocket.writer.get_extra_info("peername")[0]
+	if ipaddress.ip_address(remote_addr) not in ipaddress.ip_network(link.creator_ip):
+		return
 
 	if link_id not in wsClients:
 		wsClients[link_id] = set()
