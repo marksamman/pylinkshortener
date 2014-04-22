@@ -19,13 +19,16 @@
 # THE SOFTWARE.
 
 import ipaddress, queue
+from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, abort
-from app.models import Link, QueuedClick, Session
+from app.models import Link, Session
 from app.util import encode_int, decode_int
+from redis import Redis
 
 app = Flask(__name__)
-clicksQueue = queue.Queue()
 flask_session = Session()
+clicksQueue = queue.Queue()
+redis = Redis()
 
 @app.route("/")
 def index():
@@ -64,9 +67,16 @@ def visit_short_link(link_id):
 	if id == 0:
 		abort(404)
 
-	link = flask_session.query(Link).filter_by(id=id).first()
-	if link is None or link.random != link_id[-2:]:
-		return render_template('index.html', error='There is no shortened link with that URL.')
+	url = redis.get(id)
+	if url is None:
+		link = flask_session.query(Link).filter_by(id=id).first()
+		if link is None or link.random != link_id[-2:]:
+			return render_template('index.html', error='There is no shortened link with that URL.')
 
-	clicksQueue.put_nowait(QueuedClick(request.remote_addr, request.headers.get('User-Agent'), link.id))
-	return redirect(link.url)
+		url = link.url
+		redis.execute_command('SET', id, url)
+
+	redis.execute_command('EXPIRE', id, 10)
+
+	clicksQueue.put_nowait((request.remote_addr, request.headers.get('User-Agent'), datetime.utcnow(), id))
+	return redirect(url)

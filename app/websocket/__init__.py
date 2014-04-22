@@ -31,20 +31,17 @@ def handleClicks():
 		# FIXME: should yield from queue.get with asyncio.Queue
 		# but we can't put in asyncio.Queue from Flask thread
 		try:
-			queuedClick = clicksQueue.get(False)
+			click = Click(*clicksQueue.get(False))
 		except queue.Empty:
 			yield from asyncio.sleep(0.25)
 			continue
-
-		click = Click(queuedClick.ip, queuedClick.user_agent, None)
-		click.link_id = queuedClick.link_id
 
 		asyncio_session.add(click)
 		asyncio_session.commit()
 
 		json_data = json.dumps({
-			"inserted": queuedClick.inserted.strftime("%c"),
-			"ua": queuedClick.user_agent
+			"time": click.inserted.strftime("%c"),
+			"ua": click.user_agent
 		})
 
 		if click.link_id in wsClients:

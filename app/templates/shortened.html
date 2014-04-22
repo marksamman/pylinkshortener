@@ -47,7 +47,7 @@
                 }
                 websocket.onmessage = function(evt) {
                     res = JSON.parse(evt.data)
-                    clicks.innerHTML = "<tr><td>" + res.inserted + " UTC</td><td>" + res.ua + "</td></tr>" + clicks.innerHTML
+                    clicks.innerHTML = "<tr><td>" + res.time + " UTC</td><td>" + res.ua + "</td></tr>" + clicks.innerHTML
                 }
                 websocket.onerror = function(evt) {
                     console.log("error: " + evt.data)

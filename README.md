@@ -24,6 +24,5 @@ $ python run.py
 
 ### TODO
 * Only allow shortening URL to links that return HTTP status code 200 (OK)
-* Cache popular links with Redis
 * Graphs of click data
 * JSON API

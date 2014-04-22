@@ -60,18 +60,11 @@ class Click(Base):
     link_id = Column(Integer, ForeignKey('links.id'))
     link = relationship('Link', backref=backref('clicks', order_by=inserted.desc()))
 
-    def __init__(self, ip, user_agent, link):
-        self.inserted = datetime.utcnow()
-        self.ip = ip
-        self.user_agent = user_agent
-        self.link = link
-
-    def __repr__(self):
-        return '<Click %r>' % self.inserted
-
-class QueuedClick:
-    def __init__(self, ip, user_agent, link_id):
-        self.inserted = datetime.utcnow()
+    def __init__(self, ip, user_agent, inserted, link_id):
+        self.inserted = inserted
         self.ip = ip
         self.user_agent = user_agent
         self.link_id = link_id
+
+    def __repr__(self):
+        return '<Click %r>' % self.inserted
