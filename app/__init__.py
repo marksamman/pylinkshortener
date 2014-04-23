@@ -67,16 +67,16 @@ def visit_short_link(link_id):
 	if id == 0:
 		abort(404)
 
-	url = redis.get(id)
+	url = redis.get(link_id)
 	if url is None:
 		link = flask_session.query(Link).filter_by(id=id).first()
 		if link is None or link.random != link_id[-2:]:
 			return render_template('index.html', error='There is no shortened link with that URL.')
 
 		url = link.url
-		redis.execute_command('SET', id, url)
+		redis.execute_command('SET', link_id, url)
 
-	redis.execute_command('EXPIRE', id, 10)
+	redis.execute_command('EXPIRE', link_id, 10)
 
 	clicksQueue.put_nowait((request.remote_addr, request.headers.get('User-Agent'), datetime.utcnow(), id))
 	return redirect(url)
