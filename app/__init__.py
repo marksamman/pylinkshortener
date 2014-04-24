@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import ipaddress, math, queue, time
+import ipaddress, math, multiprocessing, time
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, abort
 from app.models import Link, Session
@@ -27,7 +27,7 @@ from redis import Redis
 
 app = Flask(__name__)
 flask_session = Session()
-clicksQueue = queue.Queue()
+clicksReceiver, clicksSender = multiprocessing.Pipe(False)
 redis = Redis()
 
 @app.route("/")
@@ -78,5 +78,5 @@ def visit_short_link(link_id):
 
 	redis.execute_command('EXPIRE', link_id, 10)
 
-	clicksQueue.put_nowait((request.remote_addr, request.headers.get('User-Agent'), math.floor(time.time()), id))
+	clicksSender.send((request.remote_addr, request.headers.get('User-Agent'), math.floor(time.time()), id))
 	return redirect(url)

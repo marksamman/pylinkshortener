@@ -20,10 +20,10 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import threading
+import multiprocessing
 from app import app
-from app.websocket import websocketThread
+from app.websocket import websocketProcess
 
 if __name__ == "__main__":
-	threading.Thread(target=websocketThread).start()
+	multiprocessing.Process(target=websocketProcess).start()
 	app.run()

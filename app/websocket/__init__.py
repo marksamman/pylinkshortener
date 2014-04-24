@@ -20,7 +20,7 @@
 
 import asyncio, ipaddress, json, queue, websockets
 from datetime import datetime
-from app import clicksQueue
+from app import clicksReceiver
 from app.models import Session, Link, Click
 
 wsClients = dict()
@@ -29,11 +29,9 @@ asyncio_session = Session()
 @asyncio.coroutine
 def handleClicks():
 	while True:
-		# FIXME: should yield from queue.get with asyncio.Queue
-		# but we can't put in asyncio.Queue from Flask thread
-		try:
-			click = Click(*clicksQueue.get(False))
-		except queue.Empty:
+		if clicksReceiver.poll():
+			click = Click(*clicksReceiver.recv())
+		else:
 			yield from asyncio.sleep(0.25)
 			continue
 
@@ -75,7 +73,7 @@ def handleConnection(websocket, uri):
 	yield from websocket.recv()
 	wsClients[link_id].remove(websocket)
 
-def websocketThread():
+def websocketProcess():
 	loop = asyncio.new_event_loop()
 	asyncio.set_event_loop(loop)
 	asyncio.Task(handleClicks())

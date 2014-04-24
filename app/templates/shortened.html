@@ -47,7 +47,6 @@
                 }
                 websocket.onmessage = function(evt) {
                     var res = JSON.parse(evt.data);
-                    console.log("recv:", res)
                     var row = clicks.insertRow(0);
                     var inserted = row.insertCell(0);
                     inserted.innerHTML = res.time;
