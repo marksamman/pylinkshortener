@@ -18,14 +18,13 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import random
+import config, math, random, time
 from datetime import datetime
 from sqlalchemy import create_engine, Column, DateTime, ForeignKey, Integer, String, VARCHAR
-from sqlalchemy.dialects.postgresql import CIDR
+from sqlalchemy.dialects.postgresql import BIGINT, CIDR
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import backref, relationship, sessionmaker
 from app.constants import url_safe
-import config
 
 engine = create_engine(config.SQLALCHEMY_DATABASE_URI)
 Session = sessionmaker(bind=engine)
@@ -37,12 +36,12 @@ class Link(Base):
     id = Column(Integer, primary_key=True)
     url = Column(VARCHAR)
     creator_ip = Column(CIDR)
-    created = Column(DateTime)
+    created = Column(BIGINT)
     random = Column(String(2))
 
     def __init__(self, url, creator_ip):
         self.url = url
-        self.created = datetime.utcnow()
+        self.created = math.floor(time.time())
         self.creator_ip = creator_ip
         self.random = ''.join(random.choice(url_safe) for _ in range(Link.random.property.columns[0].type.length))
 
@@ -53,7 +52,7 @@ class Click(Base):
     __tablename__ = 'clicks'
 
     id = Column(Integer, primary_key=True)
-    inserted = Column(DateTime)
+    inserted = Column(BIGINT)
     ip = Column(CIDR)
     user_agent = Column(VARCHAR)
 
@@ -67,4 +66,4 @@ class Click(Base):
         self.link_id = link_id
 
     def __repr__(self):
-        return '<Click %r>' % self.inserted
+        return '<Click %r>' % self.id

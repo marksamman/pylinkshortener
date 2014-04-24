@@ -19,6 +19,7 @@
 # THE SOFTWARE.
 
 import asyncio, ipaddress, json, queue, websockets
+from datetime import datetime
 from app import clicksQueue
 from app.models import Session, Link, Click
 
@@ -40,7 +41,7 @@ def handleClicks():
 		asyncio_session.commit()
 
 		json_data = json.dumps({
-			"time": click.inserted.strftime("%c"),
+			"time": datetime.utcfromtimestamp(click.inserted).strftime("%c") + " GMT",
 			"ua": click.user_agent
 		})
 

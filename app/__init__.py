@@ -18,7 +18,7 @@
 # OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
 # THE SOFTWARE.
 
-import ipaddress, queue
+import ipaddress, math, queue, time
 from datetime import datetime
 from flask import Flask, render_template, request, redirect, url_for, abort
 from app.models import Link, Session
@@ -56,7 +56,7 @@ def shortened(link_id):
 	elif ipaddress.ip_address(request.remote_addr) not in ipaddress.ip_network(link.creator_ip):
 		return render_template('index.html', error='That shortened link was not generated from your network.')
 
-	return render_template('shortened.html', base_url=request.host_url, encoded_id=encode_int(link.id), link=link)
+	return render_template('shortened.html', base_url=request.host_url, encoded_id=encode_int(link.id), link=link, datetime=datetime)
 
 @app.route("/<string:link_id>")
 def visit_short_link(link_id):
@@ -78,5 +78,5 @@ def visit_short_link(link_id):
 
 	redis.execute_command('EXPIRE', link_id, 10)
 
-	clicksQueue.put_nowait((request.remote_addr, request.headers.get('User-Agent'), datetime.utcnow(), id))
+	clicksQueue.put_nowait((request.remote_addr, request.headers.get('User-Agent'), math.floor(time.time()), id))
 	return redirect(url)

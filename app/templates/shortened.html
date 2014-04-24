@@ -16,7 +16,7 @@
                 <div class="row">
                     <div class="col-xs-4"><strong>Short URL:</strong><br>{{ base_url }}{{ encoded_id }}{{ link.random }}</div>
                     <div class="col-xs-4"><strong>Redirects to:</strong><br>{{ link.url }}</div>
-                    <div class="col-xs-4"><strong>Created:</strong><br>{{ link.created.strftime("%c") }} UTC</div>
+                    <div class="col-xs-4"><strong>Created:</strong><br>{{ datetime.utcfromtimestamp(link.created).strftime("%c") }} GMT</div>
                 </div>
                 <h3>Clicks</h3>
                 <table class="table table-striped table-condensed">
@@ -28,7 +28,7 @@
                     </thead>
                     <tbody id="clicks">
                         {% for click in link.clicks %}
-                        <tr><td>{{ click.inserted.strftime("%c") }} UTC</td><td>{{ click.user_agent }}</td></tr>
+                        <tr><td>{{ datetime.utcfromtimestamp(click.inserted).strftime("%c") }} GMT</td><td>{{ click.user_agent }}</td></tr>
                         {% endfor %}
                     </tbody>
                 </table>
@@ -36,8 +36,8 @@
         </div>
         <script>
             function initWebSocket() {
-                clicks = document.getElementById("clicks")
-                websocket = new WebSocket("ws://localhost:5001/")
+                var clicks = document.getElementById("clicks")
+                var websocket = new WebSocket("ws://localhost:5001/")
                 websocket.onopen = function(evt) {
                     console.log("connected")
                     websocket.send({{ link.id }})
@@ -46,11 +46,16 @@
                     console.log("disconnected")
                 }
                 websocket.onmessage = function(evt) {
-                    res = JSON.parse(evt.data)
-                    clicks.innerHTML = "<tr><td>" + res.time + " UTC</td><td>" + res.ua + "</td></tr>" + clicks.innerHTML
+                    var res = JSON.parse(evt.data);
+                    console.log("recv:", res)
+                    var row = clicks.insertRow(0);
+                    var inserted = row.insertCell(0);
+                    inserted.innerHTML = res.time;
+                    var userAgent = row.insertCell(1);
+                    userAgent.innerHTML = res.ua;
                 }
                 websocket.onerror = function(evt) {
-                    console.log("error: " + evt.data)
+                    console.log("error:", evt.data)
                 }
             }
             window.addEventListener("load", initWebSocket, false)
