@@ -70,8 +70,10 @@ def handleConnection(websocket, uri):
 		wsClients[link_id] = set()
 
 	wsClients[link_id].add(websocket)
-	yield from websocket.recv()
-	wsClients[link_id].remove(websocket)
+	try:
+		yield from websocket.recv()
+	finally:
+		wsClients[link_id].remove(websocket)
 
 def websocketProcess():
 	loop = asyncio.new_event_loop()
