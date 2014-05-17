@@ -45,7 +45,10 @@ def handleClicks():
 
 		if click.link_id in wsClients:
 			for client in wsClients[click.link_id]:
-				yield from client.send(json_data)
+				try:
+					yield from client.send(json_data)
+				except Exception:
+					pass
 
 @asyncio.coroutine
 def handleConnection(websocket, uri):
